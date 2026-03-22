@@ -129,6 +129,9 @@ def add_box_paragraph(doc, text, font_name, is_title=False):
     # 내부 여백
     ind = parse_xml(f'<w:ind {nsdecls("w")} w:left="240" w:right="240"/>')
     pPr.append(ind)
+    # 박스 단락들이 페이지 중간에 잘리지 않도록 keepNext + keepLines 설정
+    pPr.append(parse_xml(f'<w:keepNext {nsdecls("w")}/>'))
+    pPr.append(parse_xml(f'<w:keepLines {nsdecls("w")}/>'))
 
     if is_title:
         clean = strip_markdown(text)
@@ -158,6 +161,7 @@ def add_styled_table(doc, headers, rows, font_name):
         run = p.add_run(clean_header)
         set_font_for_run(run, font_name, 10, bold=True, color=RGBColor(0xFF, 0xFF, 0xFF))
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        set_paragraph_spacing(p, before=0, after=0, line_spacing=1.0)
         # 배경색
         shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="1F4E79" w:val="clear"/>')
         cell._element.get_or_add_tcPr().append(shading)
@@ -172,6 +176,7 @@ def add_styled_table(doc, headers, rows, font_name):
                 p = cell.paragraphs[0]
                 # 셀 안의 마크다운 서식을 실제 서식으로 변환
                 process_inline_formatting(p, cell_text.strip(), font_name, 10, COLOR_BLACK)
+                set_paragraph_spacing(p, before=0, after=0, line_spacing=1.0)
                 # 줄무늬 배경
                 if row_idx % 2 == 1:
                     shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="F2F7FB" w:val="clear"/>')
@@ -362,7 +367,7 @@ def create_cover_page(doc, font_name):
     # 구분선
     p = doc.add_paragraph()
     p.alignment = center
-    run = p.add_run("━━━━━━━━━━━━━━━")
+    run = p.add_run("━━━━━━━━━━━━━━━━━━━━━━━")
     set_font_for_run(run, font_name, 10, color=COLOR_MED_BLUE)
     set_paragraph_spacing(p, before=4, after=4)
 
@@ -381,11 +386,17 @@ def create_cover_page(doc, font_name):
     set_paragraph_spacing(p, before=0, after=12)
 
     # 작성일
-    today = datetime.date.today().strftime("%Y년 %m월 %d일")
     p = doc.add_paragraph()
     p.alignment = center
-    run = p.add_run(today)
+    run = p.add_run("2026년 3월")
     set_font_for_run(run, font_name, 12, color=COLOR_GRAY)
+    set_paragraph_spacing(p, before=0, after=12)
+
+    # 제작 안내
+    p = doc.add_paragraph()
+    p.alignment = center
+    run = p.add_run("이 책은 클로드로 제작되었습니다.")
+    set_font_for_run(run, font_name, 10, color=COLOR_GRAY)
     set_paragraph_spacing(p, before=0, after=0)
 
     add_page_break(doc)
@@ -484,19 +495,24 @@ def process_markdown(doc, md_text, font_name):
         line = lines[i]
         stripped = line.strip()
 
-        # 주석 처리
+        # 주석 처리 - pagebreak는 H1/H2의 page_break_before에서 처리하므로 스킵
         if stripped.startswith('<!-- pagebreak -->'):
-            add_page_break(doc)
             i += 1
             continue
 
         if stripped == '<!-- box-start -->':
             in_box = True
+            # 박스 앞에 빈 줄 추가
+            spacer = doc.add_paragraph()
+            set_paragraph_spacing(spacer, before=0, after=0, line_spacing=1.0)
             i += 1
             continue
 
         if stripped == '<!-- box-end -->':
             in_box = False
+            # 박스 뒤에 빈 줄 추가
+            spacer = doc.add_paragraph()
+            set_paragraph_spacing(spacer, before=0, after=0, line_spacing=1.0)
             i += 1
             continue
 
@@ -519,7 +535,7 @@ def process_markdown(doc, md_text, font_name):
                 shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="F8F9FA" w:val="clear"/>')
                 pPr.append(shading)
                 process_inline_formatting(p, quote_text, font_name, 10.5, RGBColor(0x33, 0x33, 0x33))
-                set_paragraph_spacing(p, before=6, after=6, line_spacing=1.2)
+                set_paragraph_spacing(p, before=6, after=12, line_spacing=1.2)
                 quote_buffer = []
                 in_quote = False
             i += 1
@@ -549,7 +565,7 @@ def process_markdown(doc, md_text, font_name):
             pPr.append(shading)
             run = p.add_run(quote_text)
             set_font_for_run(run, font_name, 10.5, italic=True, color=RGBColor(0x33, 0x33, 0x33))
-            set_paragraph_spacing(p, before=6, after=6, line_spacing=1.2)
+            set_paragraph_spacing(p, before=6, after=12, line_spacing=1.2)
             quote_buffer = []
             in_quote = False
 
@@ -563,7 +579,7 @@ def process_markdown(doc, md_text, font_name):
                 f'</w:pBdr>'
             )
             pPr.append(pBdr)
-            set_paragraph_spacing(p, before=6, after=6)
+            set_paragraph_spacing(p, before=6, after=12)
             i += 1
             continue
 
@@ -580,7 +596,7 @@ def process_markdown(doc, md_text, font_name):
         if img_match:
             fig_num = int(img_match.group(1))
             fig_desc = img_match.group(2).strip()
-            img_path = os.path.join(BASE_DIR, "images", f"fig{fig_num:02d}.png")
+            img_path = os.path.join(BASE_DIR, "output", "images", f"fig{fig_num:02d}.png")
             if os.path.exists(img_path):
                 # 실제 이미지 삽입
                 p = doc.add_paragraph()
@@ -615,19 +631,12 @@ def process_markdown(doc, md_text, font_name):
                 # 부 제목 (# 제1부: ...) - 배경색 없이 깔끔하게
                 center = WD_ALIGN_PARAGRAPH.CENTER
 
-                # 페이지 브레이크
-                add_page_break(doc)
-
-                # 상단 여백
-                for _ in range(7):
-                    p = doc.add_paragraph()
-                    set_paragraph_spacing(p, before=0, after=0)
-
-                # 부 제목 (Heading 1)
+                # 부 제목 (Heading 1) - page_break_before로 빈 페이지 방지
                 p = doc.add_paragraph()
                 p.style = doc.styles['Heading 1']
                 p.clear()
                 p.alignment = center
+                p.paragraph_format.page_break_before = True
                 process_inline_formatting(p, title_text, font_name, 22, COLOR_DARK_BLUE, True)
                 set_paragraph_spacing(p, before=0, after=8)
 
@@ -652,6 +661,11 @@ def process_markdown(doc, md_text, font_name):
                         set_font_for_run(run, font_name, 14, color=COLOR_MED_BLUE)
                         set_paragraph_spacing(p, before=8, after=0)
 
+                        # 부제 뒤에 빈 줄 2개 추가
+                        for _ in range(2):
+                            spacer = doc.add_paragraph()
+                            set_paragraph_spacing(spacer, before=0, after=0, line_spacing=1.0)
+
                         i = next_idx + 1
                         continue
 
@@ -659,13 +673,21 @@ def process_markdown(doc, md_text, font_name):
                 continue
 
             elif level == 2:
-                # 장/활용법 제목 (## 제1장: ...)
-                add_page_break(doc)
-                p = doc.add_paragraph()
-                p.style = doc.styles['Heading 2']
-                p.clear()
-                process_inline_formatting(p, title_text, font_name, 18, COLOR_DARK_BLUE, True)
-                set_paragraph_spacing(p, before=24, after=8)
+                if '부를 마치며' in title_text:
+                    # "N부를 마치며" 브릿지 문단: 새 페이지에서 시작
+                    p = doc.add_paragraph()
+                    p.paragraph_format.page_break_before = True
+                    run = p.add_run(title_text)
+                    set_font_for_run(run, font_name, 12, bold=True, color=COLOR_DARK_BLUE)
+                    set_paragraph_spacing(p, before=18, after=8)
+                else:
+                    # 장/활용법 제목 (## 제1장: ...) - page_break_before로 빈 페이지 방지
+                    p = doc.add_paragraph()
+                    p.style = doc.styles['Heading 2']
+                    p.clear()
+                    p.paragraph_format.page_break_before = True
+                    process_inline_formatting(p, title_text, font_name, 18, COLOR_DARK_BLUE, True)
+                    set_paragraph_spacing(p, before=24, after=8)
 
             elif level == 3:
                 # 섹션 제목 (### ...)
@@ -673,7 +695,7 @@ def process_markdown(doc, md_text, font_name):
                 p.style = doc.styles['Heading 3']
                 p.clear()
                 process_inline_formatting(p, title_text, font_name, 14, COLOR_DARK_BLUE, True)
-                set_paragraph_spacing(p, before=18, after=6)
+                set_paragraph_spacing(p, before=18, after=12)
 
             elif level == 4:
                 # 하위 섹션 (#### ...)
@@ -694,7 +716,8 @@ def process_markdown(doc, md_text, font_name):
             content = list_match.group(3)
 
             if in_box:
-                add_box_paragraph(doc, f"  {'  ' * (indent_level // 2)}{bullet_or_num} {content}", font_name)
+                box_prefix = "•" if bullet_or_num in ['-', '*'] else bullet_or_num
+                add_box_paragraph(doc, f"  {'  ' * (indent_level // 2)}{box_prefix} {content}", font_name)
             else:
                 p = doc.add_paragraph()
                 indent_cm = 0.5 + (indent_level // 2) * 0.5
@@ -706,7 +729,7 @@ def process_markdown(doc, md_text, font_name):
                     prefix = f"{bullet_or_num} "
 
                 process_inline_formatting(p, f"{prefix}{content}", font_name, 11, COLOR_BLACK)
-                set_paragraph_spacing(p, before=0, after=6, line_spacing=1.2)
+                set_paragraph_spacing(p, before=0, after=12, line_spacing=1.2)
 
             i += 1
             continue
@@ -721,7 +744,7 @@ def process_markdown(doc, md_text, font_name):
         else:
             p = doc.add_paragraph()
             process_inline_formatting(p, stripped, font_name, 11, COLOR_BLACK)
-            set_paragraph_spacing(p, before=0, after=6, line_spacing=1.2)
+            set_paragraph_spacing(p, before=0, after=12, line_spacing=1.2)
 
         i += 1
 
