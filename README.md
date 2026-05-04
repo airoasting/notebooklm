@@ -1,220 +1,119 @@
-# AI 에이전트 팀으로 책 한 권 쓰기
+# book-writer
 
-> Claude Code 스킬 5개로 책 한 권을 처음부터 끝까지 만드는 하네스입니다.
-> `book-toc.md` 파일 하나만 교체하면 어떤 주제의 책이든 같은 과정으로 만들 수 있습니다.
+> Claude Code 슬래시 커맨드 4개로 한국어 책 한 권을 처음부터 끝까지 쓰는 하네스.
+> `user-book-toc.md` 한 파일만 교체하면 다른 책으로 재사용된다.
 
-## 이 프로젝트가 하는 일
+**버전** 1.2.0 · **언어** 한국어 · **산출물** Word(`.docx`) + 출판 메타데이터
 
-핵심 커맨드 4개를 순서대로 실행하면 책이 완성됩니다. `/cover`는 언제든 독립 실행합니다.
-
-```
-/research   →  웹 검색으로 최신 정보 수집
-/write      →  구조 설계 + 초안 작성
-/review     →  내부 리뷰(비평, 독자, 합평) + 외부 리뷰(편집자, 마케터, 프루프리더) + 최종 수정
-/publish    →  Word 문서 변환 + 출판 메타데이터 생성
-/cover      →  표지 컨셉 기획 + 이미지 생성 (언제든 실행 가능)
-```
-
-## 완성물 미리보기
-
-이 하네스로 실제 만든 책: **"노트북LM으로 다 됨: 팀장이 바로 쓰는 실전 활용법 20"** (저자: AI ROASTING)
-
-| 항목 | 내용 |
-|------|------|
-| 분량 | 176,000자 (목표 12만~15만자 초과 달성), B5 판형 약 240페이지 |
-| 구성 | 프롤로그 + 7부(20개 활용법) + 에필로그 + 부록 4개 + 참고문헌 |
-| 산출물 | Word 문서(.docx), 다이어그램 약 40개, 출판 메타데이터 |
-
-Word 문서를 최종 검토 후 PDF로 변환하여 사용합니다.
-
-## 다른 책에 재사용하기
-
-### 파일 하나만 바꾸면 됩니다
+## 무엇을 하는가
 
 ```
-.claude/book-toc.md    ← ★ 이 파일만 교체
+/research   웹 조사 (Tier 1/2/3 출처 분류)
+/write      구조 설계 + 초안 (첫 호출에 청크 단위 1회 질의)
+/review     내부 리뷰 6단계 + 외부 리뷰 3단계 + 최종 수정
+/publish    자동 검증 + Word 변환 + 출판 메타데이터
 ```
 
-나머지 파일(CLAUDE.md, 스킬 5개)은 수정할 필요 없습니다.
-
-| 파일 | 역할 | 수정 필요? |
-|------|------|-----------|
-| `CLAUDE.md` | 프로세스, 범용 규칙 | 아니오 |
-| `.claude/book-toc.md` | 제목, 페르소나, 목차, 작성 스타일, 퍼블리싱 사양 | **예** |
-| `.claude/skills/*.md` | 슬래시 커맨드 5개 | 아니오 |
-
-### book-toc.md에서 바꿀 항목
-
-| 섹션 | 바꿀 내용 | 예시 |
-|------|-----------|------|
-| 기본 정보 | 제목, 부제, 필명, 대상 독자, 분량, 기준 연도 | "ChatGPT 실전 가이드", 200페이지 |
-| 페르소나 | 작성자 캐릭터, 말투 | "IT 컨설턴트 출신, 친근하고 실전적" |
-| 목차 | 프롤로그, 부, 장, 에필로그, 부록 구조 | 원하는 목차로 **통째로 교체** |
-| 활용법 가이드 | 장별 세부 작성 가이드 (필요한 경우만) | 특정 장의 필수 포함 내용 |
-| 작성 스타일 | 문체, 어미, 금지 표현, 부호 규칙 | "존댓말", "이모지 사용 가능" 등 |
-| 퍼블리싱 사양 | 폰트, 색상, 여백, 박스 스타일 | 다른 폰트, A4 판형 등 |
+핵심 4개 커맨드를 순서대로 실행하면 약 240페이지 분량의 책이 완성된다. 표지는 다루지 않으며 외부 도구나 디자이너에 위임한다.
 
 ## 시작하기
 
-### 1. 환경 준비
-
 ```bash
-# 이 레포를 fork 또는 clone
-git clone https://github.com/airoasting/notebooklm.git
-cd notebooklm
+# 1. 클론
+git clone https://github.com/airoasting/book_publishing.git my-book
+cd my-book
 
-# Python 의존성 설치 (Word 문서 생성용)
+# 2. 의존성
 pip install python-docx matplotlib
-
-# Claude Code 설치 (Anthropic 공식 CLI)
 npm install -g @anthropic-ai/claude-code
-```
 
-### 2. book-toc.md 수정
+# 3. (선택) 검증기 동작 확인
+bash tests/run-smoke.sh   # → PASS=2, FAIL=0
 
-`.claude/book-toc.md`를 열고 당신의 책에 맞게 수정합니다.
-기존 내용을 참고 삼아 각 섹션을 교체하면 됩니다.
+# 4. user-book-toc.md를 자기 책에 맞게 편집
 
-### 3. 실행
-
-```bash
+# 5. 실행
 claude
-
-# 핵심 커맨드를 순서대로 실행
 > /research
-> /write
+> /write     # 첫 호출에서 청크 단위를 한 번 묻는다
 > /review
 > /publish
-
-# 표지가 필요하면
-> /cover
 ```
 
-분량이 많으므로 `/write`는 부(Part) 단위로 끊어서 진행하는 것을 권장합니다.
+`user-book-toc.md`는 6개 섹션(기본 정보, 페르소나, 목차, 활용법 가이드, 작성 스타일, 퍼블리싱 사양)으로 구성된다. 현재 들어 있는 "노트북LM으로 다 됨" 사양을 예시로 보고 자기 책에 맞게 통째로 교체하면 된다.
+
+## 어떻게 작동하나
+
+**9명의 리뷰어가 9단계로 검수**
+
+| 단계 | 리뷰어 | 산출물 |
+|------|--------|--------|
+| 1 | 비평가 | `04_review-red.md` |
+| 3 | 독자 | `06_review-pink.md` |
+| 5 | 합평 1라운드 (5인) | `08_ensemble-review-1.md` |
+| 6 | 합평 2라운드 (5인) | `10_ensemble-review-2.md` |
+| 7 | 편집자 | `12_review-editor.md` |
+| 8 | 마케터 / 프루프리더 | `13_review-marketer.md`, `14_review-proofreader.md` |
+| 9 | 최종 수정 | `11_draft-final.md` |
+
+모든 리뷰어가 같은 10점 anchor로 채점한다. 합평 통과 게이트는 **🔴 0건 + 평균 9점 이상**이며 최대 3라운드까지 자동 진행한다.
+
+**자동 검증기 (`tests/verify.py`)**
+
+`/publish` 1단계에서 12가지를 자동 검사한다 — em dash 잔존, `**` 마크다운 잔존, 목차 헤딩 누락, 상태 마커 누락, 분량 미달, 용어 위반, 합쇼체 혼용 등. 🔴이 1건이라도 있으면 종료 코드 1로 Word 변환을 막는다.
+
+**상태 마커**
+
+각 산출물 끝의 `<!-- STAGE_COMPLETE: ... -->` 마커로 단계 완료를 판정한다. 대화가 끊겨도 활성 폴더와 마커를 자동 감지해 미완료 단계부터 append로 재개한다.
+
+## 폴더 구조
 
 ```
-> /write 프롤로그와 1부를 작성해줘
-> /write 이어서 2부를 작성해줘
+프로젝트 루트/
+├── CLAUDE.md                       프로세스 + 범용 규칙 (수정 불필요)
+├── user-book-toc.md                ★ 유일한 교체 대상
+├── .claude-plugin/plugin.json      플러그인 매니페스트
+├── .claude/skills/
+│   ├── research.md                 /research
+│   ├── write.md                    /write
+│   ├── review.md                   /review
+│   └── publish.md                  /publish
+├── tests/
+│   ├── verify.py                   원고 자동 검증기 (12개 검사)
+│   ├── run-smoke.sh                스모크 테스트 러너
+│   └── fixtures/                   pass/fail fixture 3개
+├── draft/YYYYMMDD/                 ← 한 권 = 하나의 날짜 폴더 (gitignore)
+│   └── 01_research-notes.md ~ 14_review-proofreader.md
+└── output/YYYYMMDD/                ← 같은 날짜의 출판 산출물 (gitignore)
+    ├── final.docx
+    ├── metadata.md
+    └── images/
 ```
 
-## 스킬 구조
+같은 날 새 책을 시작하면 `draft/YYYYMMDD_01/`처럼 접미가 붙는다.
 
-```
-CLAUDE.md                       ← 프로세스 + 범용 규칙 (수정 불필요)
-.claude/
-├── book-toc.md                 ← ★ 유일한 교체 대상
-└── skills/
-    ├── research.md             /research   웹 검색 조사
-    ├── write.md                /write      구조 설계 + 초안
-    ├── review.md               /review     내부+외부 리뷰 전체
-    ├── publish.md              /publish    Word 변환 + 메타데이터
-    └── cover.md                /cover      표지 디자인 (독립)
-```
+## 다른 책에 재사용
 
-## 산출물 번호 체계
-
-draft/ 폴더의 모든 파일은 생성 순서대로 번호가 붙어, 파일 탐색기에서 작업 흐름이 한눈에 보입니다.
-
-```
-draft/
-├── 01_research-notes.md        /research
-├── 02_outline.md               /write
-├── 03_draft-v1.md              /write
-├── 04_review-red.md            /review (내부: 비평)
-├── 05_draft-v2.md              /review (내부: 수정)
-├── 06_review-pink.md           /review (내부: 독자 리뷰)
-├── 07_draft-v3.md              /review (내부: 수정)
-├── 08_ensemble-review-1.md     /review (내부: 합평 1라운드)
-├── 09_draft-v4.md              /review (내부: 수정)
-├── 10_ensemble-review-2.md     /review (내부: 합평 2라운드)
-├── 11_draft-final.md           /review (내부: 최종 반영)
-├── 12_review-editor.md         /review (외부: 편집자)
-├── 13_review-marketer.md       /review (외부: 마케터)
-└── 14_review-proofreader.md    /review (외부: 프루프리더)
-
-output/
-├── final.docx                  /publish
-├── metadata.md                 /publish
-├── cover_concept.md            /cover
-├── generate_docx.py            /publish (자동 생성)
-├── generate_images.py          /publish (자동 생성)
-├── generate_cover.py           /cover (자동 생성)
-└── images/                     다이어그램 + 표지 이미지
-```
-
-## 핵심 설계 원칙
-
-### 왜 리뷰를 이렇게 많이 하나?
-
-혼자 쓰면 자기 글의 약점을 못 봅니다. 이 하네스는 **5가지 관점**으로 같은 원고를 검토합니다.
-
-| 관점 | 보는 것 |
-|------|---------|
-| 비평가 | 논리적 비약, 근거 없는 주장 |
-| 예상독자 | 이해 불가한 설명, 용어 미설명 |
-| 리서처 | 사실 오류, 출처 누락 |
-| 아키텍트 | 목차 누락, 분량 불균형 |
-| 퍼블리셔 | 서식 위반, 시각 자료 누락 |
-
-합평 후 외부 검증자(편집자, 마케터, 프루프리더)가 출판 수준의 검수를 합니다.
-
-### 심각도 3단계
-
-모든 리뷰에서 지적 사항은 심각도로 분류됩니다.
-
-- 🔴 **필수**: 반드시 수정. 이것이 남아있으면 점수와 무관하게 재수정
-- 🟡 **권장**: 수정하면 품질 상승. 판단하여 반영
-- 🟢 **참고**: 고치지 않아도 됨
-
-### 품질 게이트
-
-합평에서 🔴이 0건이고 5명 평균 9점 이상이면 통과. 미달이면 재수정 후 재합평 (최대 3라운드).
-
-## 주의사항
-
-- **분량 관리**: 12만~15만 자는 한 번에 생성되지 않습니다. 부 단위로 나눠 작성합니다
-- **컨텍스트 한계**: 대화가 길어지면 앞부분을 잊습니다. 새 대화를 시작해도 CLAUDE.md와 draft 파일을 읽으므로 이어서 작업 가능합니다
-- **마케터 의견**: 참고만 하고 본문 수정에는 반영하지 않습니다. 이 규칙은 book-toc.md에서 변경 가능합니다
+`user-book-toc.md` **한 파일만** 교체한다. `CLAUDE.md`, 스킬 4개, `verify.py`는 손대지 않는다. 다른 언어로 쓸 때도 작성 스타일·퍼블리싱 사양(폰트)만 해당 언어에 맞게 수정하면 된다.
 
 ## 트러블슈팅
 
-### 대화 중간에 끊겼을 때
-
-```
-> /write 이어서 작성해줘
-> /review 이어서 진행해줘
-```
-
-`/review`는 draft/ 폴더 상태를 자동 감지하여 미완료 단계부터 재개합니다.
-
-### 합평에서 9점을 넘기지 못할 때
-
-최대 3라운드까지 진행됩니다. 3라운드 후에도 미달이면 현재 상태에서 퍼블리싱을 진행합니다.
-
-### 다른 언어로 책을 쓸 때
-
-book-toc.md의 작성 스타일과 퍼블리싱 사양(폰트)을 해당 언어에 맞게 수정하면 됩니다. CLAUDE.md와 스킬은 수정 불필요입니다.
-
-## 예상 소요시간과 비용
-
-| 항목 | 규모 |
+| 상황 | 처리 |
 |------|------|
-| 총 대화 세션 | 약 15~20회 |
-| 총 소요시간 | 약 8~12시간 (모니터링 기준) |
-| 가장 오래 걸리는 단계 | `/write` — 부 단위로 7~10회 나눠 진행 |
-| 가장 빠른 단계 | `/research` — 1회 대화로 완료 |
-
-## 기술 스택
-
-| 용도 | 기술 |
-|------|------|
-| 에이전트 실행 | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (Anthropic) |
-| 원고 형식 | Markdown |
-| 문서 생성 | python-docx |
-| 다이어그램 | matplotlib |
-| 폰트 | book-toc.md에서 지정 |
+| 대화가 중간에 끊겼다 | `/write 이어서 작성해줘` 또는 `/review 이어서 진행해줘`. 활성 폴더와 마커로 재개한다 |
+| 합평이 9점을 못 넘긴다 | 최대 3라운드까지 자동. 미통과 시 사유가 `10_ensemble-review-2.md`에 기록된다 |
+| 검증에서 🔴이 나왔다 | `output/{ACTIVE}/verify-report.md` 확인 → 본문 직접 수정 또는 `/review` 9단계 재실행. 🔴 0이 될 때까지 Word 변환은 막힌다 |
+| 청크 단위를 바꾸고 싶다 | `draft/{ACTIVE}/_session-config.json`을 편집하거나 삭제 |
 
 ## 라이선스
 
-이 프로젝트의 콘텐츠(원고, 이미지)는 AI ROASTING에게 저작권이 있습니다.
-하네스 구조(CLAUDE.md, 스킬 파일)는 자유롭게 참고하고 변형하여 사용할 수 있습니다.
+- 콘텐츠 산출물(원고·이미지)의 저작권은 작성자에게 있다
+- 하네스 구조(`CLAUDE.md`, 스킬, `verify.py`, fixture)는 자유롭게 참고·변형해 사용할 수 있다
+
+## 변경 이력
+
+상세 내용은 [CHANGELOG.md](CHANGELOG.md)를 참조한다.
+
+- **1.2.0** (2026-05-04) — `user-book-toc.md` 이름·위치 변경 (루트로)
+- **1.1.0** (2026-05-04) — `/write` 청크 단위 1회 질의, `/cover` 스킬 제거
+- **1.0.0** (2026-05-04) — 플러그인 매니페스트, 스모크 테스트, 자동 검증기, 출처 신뢰도 등급, 자가 채점

@@ -1,0 +1,17 @@
+{
+  "name": "book-writer",
+  "version": "1.2.0",
+  "description": "AI 에이전트 팀이 240페이지 분량의 한국어 책 한 권을 처음부터 끝까지 쓴다. 리서치·구조 설계·초안·내부 리뷰 9인·외부 리뷰 3인·검증·Word 변환·메타데이터까지 자동화. user-book-toc.md 한 파일만 교체하면 다른 책으로 재사용된다.",
+  "author": {
+    "name": "AI ROASTING"
+  },
+  "homepage": "https://github.com/airoasting/book_publishing",
+  "keywords": [
+    "book-writing",
+    "korean",
+    "docx",
+    "publishing",
+    "ensemble-review",
+    "agentic-writing"
+  ]
+}

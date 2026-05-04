@@ -1,5 +1,39 @@
-.DS_Store
-*.backup
-font/
-__pycache__/
+# 작업 산출물 (한 권 = 한 폴더, 추적 안 함)
 draft/
+
+# 출판 산출물 (재생성 가능, 레포에 포함하지 않음)
+output/
+
+# 폰트 (시스템 폰트로 폴백)
+font/
+
+# 백업 (수정 단계마다 자동 생성)
+**/_backup/
+
+# 검증 산출물 (재생성 가능)
+**/verify-report.md
+/tmp/_pass-report.md
+/tmp/_fail-report.md
+
+# 로컬 설정·개인 자료
+.claude/settings.local.json
+*.xlsx
+프로젝트 구조*.pdf
+
+# macOS 자동 생성 사본 (한국어 시간 접미)
+*오전*
+*오후*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
