@@ -86,19 +86,22 @@ claude
 
 마케터도 별도로 의견을 주지만 점수는 매기지 않으며, 출판 메타데이터(부제·소개·키워드)에만 참고용으로 반영합니다.
 
-### 리뷰는 9개 단계로 진행됩니다
+### `/review`는 10개 단계로 진행됩니다
 
-| 단계 | 작업 | 산출물 |
-|------|------|--------|
+`/research`(`01_research-notes.md`)와 `/write`(`02_outline.md`, `03_draft-v1.md`)가 끝난 뒤, `/review`는 04번 파일부터 시작합니다.
+
+| 리뷰 단계 | 작업 | 산출물 |
+|-----------|------|--------|
 | 1 | 비평가 리뷰 | `04_review-red.md` |
 | 2 | 비평 반영 수정 | `05_draft-v2.md` |
 | 3 | 독자 리뷰 | `06_review-pink.md` |
 | 4 | 독자 반영 수정 | `07_draft-v3.md` |
 | 5 | 합평 1라운드 (5인) | `08_ensemble-review-1.md` |
-| 6 | 합평 2라운드 (5인) | `10_ensemble-review-2.md` |
-| 7 | 편집자 리뷰 | `12_review-editor.md` |
-| 8 | 마케터·프루프리더 리뷰 | `13_review-marketer.md`, `14_review-proofreader.md` |
-| 9 | 최종 수정 | `11_draft-final.md` |
+| 6 | 합평 1라운드 반영 수정 | `09_draft-v4.md` |
+| 7 | 합평 2라운드 (5인) | `10_ensemble-review-2.md` + `11_draft-final.md` (합평 통과본 생성) |
+| 8 | 편집자 리뷰 | `12_review-editor.md` |
+| 9 | 마케터·프루프리더 리뷰 | `13_review-marketer.md`, `14_review-proofreader.md` |
+| 10 | 최종 수정 | `11_draft-final.md` (덮어쓰기 갱신) |
 
 모든 리뷰어가 동일한 10점 만점 기준으로 채점합니다. 합평을 통과하려면 **🔴이 0건이고 평균 9점 이상**이어야 하며, 기준에 도달할 때까지 최대 3라운드를 자동으로 반복합니다.
 
